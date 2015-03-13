@@ -1,0 +1,52 @@
+package com.PixelYeti.SkyWars.Commands;
+
+/**
+ * Created by Callum on 13/03/2015.
+ */
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+
+import com.PixelYeti.SkyWars.Arena;
+import com.PixelYeti.SkyWars.ArenaManager;
+import com.PixelYeti.SkyWars.CommandInfo;
+import com.PixelYeti.SkyWars.GameCommand;
+import com.PixelYeti.SkyWars.Main;
+import com.PixelYeti.SkyWars.SettingsManager;
+
+@CommandInfo(aliases = { "addspawn" }, description = "Add a spawn to an arena.", usage = "<arenaName>", op = true)
+public class AddSpawn extends GameCommand{
+
+    @Override
+    public void onCommand(Player p, String[] args) {
+        if (args.length == 0) {
+            p.sendMessage(ChatColor.RED + "You must specify the arena to which the spawn will be added.");
+            return;
+        }
+
+        Arena a = ArenaManager.getInstance().getArena(args[0]);
+
+        if (a == null) {
+            p.sendMessage(ChatColor.RED + "An arena with that name does not exist.");
+            return;
+        }
+
+        if (!a.getBounds().contains(p.getLocation())) {
+            p.sendMessage(ChatColor.RED + "That location is outside of the bounds of the arena.");
+            return;
+        }
+
+        a.addSpawn(p.getLocation());
+
+        if (!SettingsManager.getArenas().contains(a.getID() + ".spawns")) {
+            SettingsManager.getArenas().createSection(a.getID() + ".spawns");
+        }
+
+        Location roundedLocation = new Location(p.getLocation().getWorld(), Math.round(p.getLocation().getX()) + 0.5, Math.round(p.getLocation().getY()), Math.round(p.getLocation().getZ()) + 0.5);
+        Main.saveLocation(roundedLocation, SettingsManager.getArenas().createSection(a.getID() + ".spawns" + "." + SettingsManager.getArenas().<ConfigurationSection>get(a.getID() + ".spawns").getKeys(false).size()));
+        SettingsManager.getArenas().save();
+
+        p.sendMessage(ChatColor.GREEN + "Added spawn.");
+    }
+}
